@@ -1,6 +1,7 @@
 package com.mesosphere.sdk.testutils;
 
 import com.mesosphere.sdk.offer.CommonTaskUtils;
+import com.mesosphere.sdk.offer.Constants;
 import org.apache.mesos.Protos;
 
 import java.util.Arrays;
@@ -25,6 +26,21 @@ public class TaskTestUtils {
                 .setContainer(TestConstants.CONTAINER_INFO);
         builder = CommonTaskUtils.setType(builder, TestConstants.TASK_TYPE);
         builder = CommonTaskUtils.setIndex(builder, index);
+        for (Protos.Resource r : resources) {
+            String resourceId = "";
+            for (Protos.Label l : r.getReservation().getLabels().getLabelsList()) {
+                if (l.getKey().equals("resource_id")) {
+                   resourceId = l.getValue();
+                }
+            }
+            if (!resourceId.equals("") && r.getName().equals(Constants.PORTS_RESOURCE_TYPE)) {
+                builder.getCommandBuilder()
+                        .getEnvironmentBuilder()
+                        .addVariablesBuilder()
+                        .setName(TestConstants.PORT_ENV_NAME)
+                        .setValue(Long.toString(r.getRanges().getRange(0).getBegin()));
+            }
+        }
         return builder.addAllResources(resources).build();
     }
 
